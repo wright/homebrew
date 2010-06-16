@@ -200,16 +200,27 @@ class GitDownloadStrategy <AbstractDownloadStrategy
     ohai "Cloning #{@url}"
     unless @clone.exist?
       safe_system('git', 'clone', @url, @clone) rescue begin
-        @url[0,3] = 'http' # try again via http://, maybe a proxy blocks git://
-        safe_system 'git', 'clone', @url, @clone
+        if @url[0,3] == 'git'
+          puts "Downloading with the git protocol failed, retrying with http..."
+          @url[0,3] = 'http'
+          safe_system 'git', 'clone', @url, @clone
+        else
+          raise
+        end
       end
     else
       puts "Updating #{@clone}"
-      Dir.chdir(@clone) { quiet_safe_system 'git', 'fetch', @url rescue begin
-           @url[0,3] = 'http' # try again via http://, maybe a proxy blocks git://
-           quiet_safe_system 'git', 'fetch', @url
+      Dir.chdir @clone do
+        quiet_safe_system 'git', 'fetch', @url rescue begin
+          if @url[0,3] == 'git'
+            puts "Downloading with the git protocol failed, retrying with http..."
+            @url[0,3] = 'http'
+            quiet_safe_system 'git', 'fetch', @url
+          else
+            raise
+          end
         end
-      }
+      end
     end
   end
 
