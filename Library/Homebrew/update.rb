@@ -1,8 +1,10 @@
 class RefreshBrew
   RESPOSITORY_URL  = 'git://github.com/mxcl/homebrew.git'
+  ALT_RESPOSITORY_URL  = 'http://github.com/mxcl/homebrew.git'
   INIT_COMMAND     = "git init"
   CHECKOUT_COMMAND = 'git checkout -q master'
   UPDATE_COMMAND   = "git pull #{RESPOSITORY_URL} master"
+  ALT_UPDATE_COMMAND   = "git pull #{ALT_RESPOSITORY_URL} master"
   REVISION_COMMAND = 'git log -l -1 --pretty=format:%H 2> /dev/null'
   GIT_UP_TO_DATE   = 'Already up-to-date.'
   
@@ -62,8 +64,16 @@ class RefreshBrew
   def execute(cmd)
     out = `#{cmd}`
     if $? && !$?.success?
-      puts out
-      raise "Failed while executing #{cmd}"
+      if cmd == UPDATE_COMMAND
+        out = `#{ALT_UPDATE_COMMAND}`
+        if $? && !$?.success?
+          puts out
+          raise "Failed while executing #{cmd}"
+        end
+      else
+        puts out
+        raise "Failed while executing #{cmd}"
+      end
     end
     ohai(cmd, out) if ARGV.verbose?
     out

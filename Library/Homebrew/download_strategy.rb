@@ -199,10 +199,17 @@ class GitDownloadStrategy <AbstractDownloadStrategy
   def fetch
     ohai "Cloning #{@url}"
     unless @clone.exist?
-      safe_system 'git', 'clone', @url, @clone # indeed, leave it verbose
+      safe_system('git', 'clone', @url, @clone) rescue begin
+        @url[0,3] = 'http' # try again via http://, maybe a proxy blocks git://
+        safe_system 'git', 'clone', @url, @clone
+      end
     else
       puts "Updating #{@clone}"
-      Dir.chdir(@clone) { quiet_safe_system 'git', 'fetch', @url }
+      Dir.chdir(@clone) { quiet_safe_system 'git', 'fetch', @url rescue begin
+           @url[0,3] = 'http' # try again via http://, maybe a proxy blocks git://
+           quiet_safe_system 'git', 'fetch', @url
+        end
+      }
     end
   end
 
