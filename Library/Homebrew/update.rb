@@ -62,10 +62,19 @@ class RefreshBrew
   end
   
   def execute(cmd)
+    if ENV['HOMEBREW_GIT_VIA_HTTP'] and cmd == UPDATE_COMMAND
+      puts "using http:// instead of git:// protocol"
+      cmd = ALT_UPDATE_COMMAND
+    end
     out = `#{cmd}`
     if $? && !$?.success?
       if cmd == UPDATE_COMMAND
-        out = `#{ALT_UPDATE_COMMAND}`
+        puts "using http:// instead of git:// protocol"
+        if not ENV['HOMEBREW_GIT_VIA_HTTP']
+          puts "(force using http:// by setting the environment variable HOMEBREW_GIT_VIA_HTTP)"
+        end
+        cmd = ALT_UPDATE_COMMAND
+        out = `#{cmd}`
         if $? && !$?.success?
           puts out
           raise "Failed while executing #{cmd}"
