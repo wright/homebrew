@@ -196,7 +196,7 @@ class GitDownloadStrategy <AbstractDownloadStrategy
     @clone
   end
 
-  def fetch_http_fallback url
+  def use_http_fallback
     if @url[0,3] == 'git'
       puts "using http:// instead of git:// protocol"
       if not ENV['HOMEBREW_GIT_VIA_HTTP']
@@ -204,18 +204,17 @@ class GitDownloadStrategy <AbstractDownloadStrategy
       end
       @url[0,3] = 'http'
     end
-    return url
   end
 
   def fetch
     if ENV['HOMEBREW_GIT_VIA_HTTP']
-      @url = fetch_http_fallback @url
+      use_http_fallback
     end
     ohai "Cloning #{@url}"
     unless @clone.exist?
       safe_system('git', 'clone', @url, @clone) rescue begin
         if @url[0,3] == 'git'
-          @url = fetch_http_fallback @url
+          use_http_fallback
           safe_system 'git', 'clone', @url, @clone
         else
           raise
@@ -226,7 +225,7 @@ class GitDownloadStrategy <AbstractDownloadStrategy
       Dir.chdir @clone do
         quiet_safe_system 'git', 'fetch', @url rescue begin
           if @url[0,3] == 'git'
-           @url = fetch_http_fallback @url
+           use_http_fallback
            quiet_safe_system 'git', 'fetch', @url
           else
             raise
